@@ -11,7 +11,7 @@ namespace BTCeAPITest
     class Program
     {
         private static ILog logger = log4net.LogManager.GetLogger("Console");
-        private static FeeInfo fee = BTCeAPI.BTCeAPIWrapper.Instance.DefaultFee;
+        private static FeeInfo fee = null;
         private static TickerInfo ticker = null;
 
         private static object lockFee = new object();
@@ -50,15 +50,14 @@ namespace BTCeAPITest
             }
 
             BTCeAPIWrapper api = BTCeAPIWrapper.Instance;
+            api.PriceChangePushIndicator = BTCeAPIWrapper.PUSH_PRICE_CHANGE_BUY_UP | BTCeAPIWrapper.PUSH_PRICE_CHANGE_SELL;
             api.TickerTimeout = 2;
-            api.FeeTimeout = 4;
+            api.FeeTimeout = 40;
             
             api.PriceChanged += new EventHandler(OnUSDBTCPChanged);
             api.PriceChanged += new EventHandler(OnUSDBTCPChanged2);
 
             api.FeeChanged += new EventHandler(OnBTCeFeeChanged);
-
-            Console.WriteLine("Default Fee: " + fee);
 
             api.Credential(key, secret);
             api.InfoReceived += new EventHandler(OnInfoReceived);
@@ -82,6 +81,8 @@ namespace BTCeAPITest
             lock (lockTicket)
             {
                 ticker = (tickerObject as TickerInfo);
+                Console.WriteLine("New Price: " + ticker);
+                logger.Debug(ticker);
             }
         }
 
@@ -90,6 +91,8 @@ namespace BTCeAPITest
             lock (lockFee)
             {
                 fee = (feeObject as FeeInfo);
+                Console.WriteLine("Fee: " + fee);
+                logger.Debug(fee);
             }
         }
 
