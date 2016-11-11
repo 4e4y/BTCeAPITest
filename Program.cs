@@ -63,6 +63,9 @@ namespace BTCeAPITest
             api.InfoReceived += new EventHandler(OnInfoReceived);
             api.ActiveOrdersReceived += new EventHandler(OnActiveOrdersReceived);
 
+            api.ActiveOrdersCountChange += new EventHandler(OnActiveOrdersCountChange);
+            api.ActiveOrdersTotalAmountChange += new EventHandler(OnActiveOrdersTotalAmountChange);
+
             Console.ReadLine();
 
             logger.Info("Application ended ...");
@@ -105,6 +108,18 @@ namespace BTCeAPITest
         {
             Console.WriteLine("Active Orders: ");
             Console.WriteLine(activeOrdersList.ToString());
+        }
+
+        private static void OnActiveOrdersCountChange(object activeOrdersList, EventArgs e)
+        {
+            Console.WriteLine("Active Orders Count changed: ");
+            Console.WriteLine(activeOrdersList.ToString() + "; New Orders count: " + (e as DecimalEventArgs).Value);
+        }
+
+        private static void OnActiveOrdersTotalAmountChange(object activeOrdersList, EventArgs e)
+        {
+            Console.WriteLine("Active Orders Total Amount changed: ");
+            Console.WriteLine(activeOrdersList.ToString() + "; New Total Amount: " + (e as DecimalEventArgs).Value);
         }
     }
 }
