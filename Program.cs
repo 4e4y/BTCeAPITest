@@ -60,11 +60,12 @@ namespace BTCeAPITest
             api.FeeChanged += new EventHandler(OnBTCeFeeChanged);
 
             api.Credential(key, secret);
-            api.InfoReceived += new EventHandler(OnInfoReceived);
+            // api.InfoReceived += new EventHandler(OnInfoReceived);
+            api.CurrencyAmountChanged += new EventHandler(OnCurrencyAmountChanged);
             api.ActiveOrdersReceived += new EventHandler(OnActiveOrdersReceived);
 
-            api.ActiveOrdersCountChange += new EventHandler(OnActiveOrdersCountChange);
-            api.ActiveOrdersTotalAmountChange += new EventHandler(OnActiveOrdersTotalAmountChange);
+            api.ActiveOrdersCountChanged += new EventHandler(OnActiveOrdersCountChange);
+            api.ActiveOrdersTotalAmountChanged += new EventHandler(OnActiveOrdersTotalAmountChange);
 
             Console.ReadLine();
 
@@ -102,6 +103,16 @@ namespace BTCeAPITest
         private static void OnInfoReceived(Object infoObject, EventArgs e)
         {
             Console.WriteLine("Account Info: " + infoObject.ToString());
+        }
+
+        private static void OnCurrencyAmountChanged(object infoObject, EventArgs e)
+        {
+            CurrencyEventArgs cea = (e as CurrencyEventArgs);
+            if (cea != null &&
+                cea.Currencies.Count > 0)
+            {
+                Console.WriteLine("Changed Currencies: " + cea.Currencies);
+            }
         }
 
         private static void OnActiveOrdersReceived(object activeOrdersList, EventArgs e)
