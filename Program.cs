@@ -3,6 +3,7 @@ using log4net;
 using log4net.Config;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -20,6 +21,8 @@ namespace BTCeAPITest
         static void Main(string[] args)
         {
             XmlConfigurator.Configure();
+
+            Console.CursorVisible = false;
 
             logger.Info("Application started ...");
 
@@ -49,27 +52,137 @@ namespace BTCeAPITest
                 }
             }
 
-            BTCeAPIWrapper api = BTCeAPIWrapper.Instance;
-            api.PriceChangePushIndicator = BTCeAPIWrapper.PUSH_PRICE_CHANGE_BUY_UP | BTCeAPIWrapper.PUSH_PRICE_CHANGE_SELL;
-            api.TickerTimeout = 2;
-            api.FeeTimeout = 40;
-            
-            api.PriceChanged += new EventHandler(OnUSDBTCPChanged);
-            api.PriceChanged += new EventHandler(OnUSDBTCPChanged2);
+            Console.WindowHeight = 5;
+            Console.WindowWidth = 80;
+            Console.BufferHeight = 5;
+            Console.BufferWidth = 80;
+            Console.Title = "BTCeAPI Test Application";
 
+            CreateGUI();
+
+            BTCeAPIWrapper api = BTCeAPIWrapper.Instance;
+            api.PriceChangePushIndicator = BTCeAPIWrapper.PUSH_PRICE_CHANGE_BUY | BTCeAPIWrapper.PUSH_PRICE_CHANGE_SELL;
+            // api.TickerTimeout = 2;
+            // api.FeeTimeout = 40;
+            api.PriceChanged += new EventHandler(OnPriceChanged);
             api.FeeChanged += new EventHandler(OnBTCeFeeChanged);
 
             api.Credential(key, secret);
+
+            /*
             // api.InfoReceived += new EventHandler(OnInfoReceived);
             api.CurrencyAmountChanged += new EventHandler(OnCurrencyAmountChanged);
             api.ActiveOrdersReceived += new EventHandler(OnActiveOrdersReceived);
 
             api.ActiveOrdersCountChanged += new EventHandler(OnActiveOrdersCountChange);
             api.ActiveOrdersTotalAmountChanged += new EventHandler(OnActiveOrdersTotalAmountChange);
+             * */
 
             Console.ReadLine();
 
             logger.Info("Application ended ...");
+        }
+
+        private static void CreateGUI()
+        {
+            Console.CursorLeft = 0;
+            Console.CursorTop = 0;
+            Console.Write("*".PadLeft(80, '*'));
+
+            Console.CursorLeft = 0;
+            Console.CursorTop = 1;
+            //                         1         2         3         4         5         6         7
+            //               01234567890123456789012345678901234567890123456789012345678901234567890123456789
+            Console.Write(  "* Currency: BTC_USD; BUY:            ; SELL:            ; VOL:                 *");
+
+            Console.CursorLeft = 0;
+            Console.CursorTop = 2;
+            Console.Write("* Fee:     ;                                                                   *");
+
+            Console.CursorLeft = 0;
+            Console.CursorTop = 3;
+            Console.Write("*".PadLeft(80, '*'));
+        }
+
+        private static void OnPriceChanged(Object tickerObject, EventArgs e)
+        {
+            TickerInfo ti = (tickerObject as TickerInfo);
+            PriceChangedEventArgs args = (e as PriceChangedEventArgs);
+
+            if (ti != null && args != null)
+            {
+                lock (lockTicket)
+                {
+                    if (ticker == null)
+                    {
+                        ticker = ti;
+
+                        Console.CursorLeft = 26;
+                        Console.CursorTop = 1;
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write(string.Format("{0:F6}", ticker.Buy).PadLeft(11, ' '));
+
+                        Console.CursorLeft = 45;
+                        Console.CursorTop = 1;
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write(string.Format("{0:F6}", ticker.Sell).PadLeft(11, ' '));
+
+                        Console.CursorLeft = 63;
+                        Console.CursorTop = 1;
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write(string.Format("{0:F0}/{1:F0}", ticker.VolumeCurrency, ticker.Volume).PadLeft(15, ' '));
+
+                        return;
+                    }
+
+                    ticker = ti;
+                }
+
+                if (
+                    (args.PriceChangedIndicator & BTCeAPIWrapper.PRICE_CHANGED_BUY_UP) > 0 ||
+                    ((args.PriceChangedIndicator & BTCeAPIWrapper.PRICE_CHANGED_BUY_DOWN) > 0)
+                )
+                {
+                    Console.CursorLeft = 26;
+                    Console.CursorTop = 1;
+
+                    if ((args.PriceChangedIndicator & BTCeAPIWrapper.PRICE_CHANGED_BUY_UP) > 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write(string.Format("{0:F6}", ticker.Buy).PadLeft(11, ' '));
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write(string.Format("{0:F6}", ticker.Buy).PadLeft(11, ' '));
+                    }
+                }
+
+                if (
+                    (args.PriceChangedIndicator & BTCeAPIWrapper.PRICE_CHANGED_SELL_UP) > 0 ||
+                    ((args.PriceChangedIndicator & BTCeAPIWrapper.PRICE_CHANGED_SELL_DOWN) > 0)
+                )
+                {
+                    Console.CursorLeft = 45;
+                    Console.CursorTop = 1;
+
+                    if ((args.PriceChangedIndicator & BTCeAPIWrapper.PRICE_CHANGED_SELL_UP) > 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write(string.Format("{0:F6}", ticker.Sell).PadLeft(11, ' '));
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write(string.Format("{0:F6}", ticker.Sell).PadLeft(11, ' '));
+                    }
+                }
+
+                Console.CursorLeft = 63;
+                Console.CursorTop = 1;
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(string.Format("{0:F0}/{1:F0}", ticker.VolumeCurrency, ticker.Volume).PadLeft(15, ' '));
+            }
         }
 
         private static void OnUSDBTCPChanged(Object tickerObject, EventArgs e)
@@ -92,11 +205,29 @@ namespace BTCeAPITest
 
         private static void OnBTCeFeeChanged(Object feeObject, EventArgs e)
         {
-            lock (lockFee)
+            FeeInfo feeInfo = (feeObject as FeeInfo);
+            if (feeInfo != null)
             {
-                fee = (feeObject as FeeInfo);
-                Console.WriteLine("Fee: " + fee);
-                logger.Debug(fee);
+                lock (lockFee)
+                {
+                    if (fee == null)
+                    {
+                        fee = feeInfo;
+
+                        Console.CursorLeft = 7;
+                        Console.CursorTop = 2;
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write(string.Format("{0:F1}%", fee.Fee).PadLeft(4, ' '));
+
+                        return;
+                    }
+                    fee = feeInfo;
+
+                    Console.CursorLeft = 7;
+                    Console.CursorTop = 2;
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.Write(string.Format("{0:F1}%", fee.Fee).PadLeft(4, ' '));
+                }
             }
         }
 
